@@ -1,0 +1,100 @@
+buildscript {
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.6.RELEASE")
+        classpath 'gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.17.2'
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.1.6.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    developmentOnly
+    runtimeClasspath {
+        extendsFrom developmentOnly
+    }
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    compileOnly 'org.projectlombok:lombok'
+    //developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+
+    //testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.1'
+    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile 'com.intuit.karate:karate-junit4:0.9.4'
+    testCompile 'com.intuit.karate:karate-apache:0.9.4'
+}
+
+sourceSets.main.java.srcDir 'src/main/java'
+//sourceSets.test.java.srcDir 'src/test/java'
+
+sourceSets {
+    test {
+        java {
+            srcDir file('src/test/java')
+        }
+        resources {
+            srcDir file('src/test/java')
+            exclude '**/*.java'
+        }
+    }
+}
+
+test{
+    minHeapSize = "128m"
+    maxHeapSize = "512m"
+    /*systemProperty("DEMO_PORT", "8182")
+    systemProperty("BASEURL", "http://localhost:8182")
+    systemProperty("FIRSTNAME", "Prabhu")
+    systemProperty("LASTNAME", "Namachivayam")*/
+    systemProperty "cucumber.options", System.properties.getProperty("cucumber.options")
+    systemProperty "karate.env", System.properties.getProperty("karate.env")
+}
+
+//Config for generating Distroless Docker Image
+apply plugin: 'com.palantir.docker'
+docker {
+    name "docker-distroless-app"
+    tags "1.0"
+    files jar.archivePath
+    dockerfile file("DistrolessFile")
+    buildArgs(['JAR_FILE': "${jar.archiveName}"])
+}
+
+//Config for generating Simple Docker Image
+/*apply plugin: 'com.palantir.docker'
+docker {
+    name "docker-app"
+    tags "1.0"
+    files jar.archivePath
+    dockerfile file("DockerFile")
+    buildArgs(['JAR_FILE': "${jar.archiveName}"])
+}*/

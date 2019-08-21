@@ -1,0 +1,29 @@
+FROM openjdk:8-jre-alpine AS build-env
+ARG JAR_FILE
+ADD ${JAR_FILE} /app/demo-app.jar
+WORKDIR /app
+RUN echo ${JAR_FILE}
+RUN apk update && \
+ apk add --no-cache openssl ca-certificates wget && \
+ apk update ca-certificates && \
+ apk del openssl
+RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
+ chmod +x /bin/aws-env
+CMD eval $(aws-env) && java -jar -Dprofile= demo-app.jar
+
+FROM gcr.io/distroless/java:8
+COPY --from=build-env /app /app
+WORKDIR /app
+CMD ["demo-app.jar"]
+
+
+#FROM openjdk:8-jdk-alpine
+#VOLUME /tmp
+#ARG JAR_FILE
+#ADD ${JAR_FILE} demo-app.jar
+#RUN echo ${JAR_FILE}
+#RUN apk update && \
+# apk add --no-cache openssl ca-certificates wget && \
+# apk update ca-certificates && \
+# apk del openssl
+#CMD java -jar -Dprofile= /demo-app.jar
